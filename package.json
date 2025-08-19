@@ -1,7 +1,7 @@
 {
-  "name": "lockup_vestingtokenplans",
+  "name": "chronos-locker",
   "version": "1.0.0",
-  "description": "Smart Contract Repository for the Lockup and Vesting Token Plans",
+  "description": "Smart Contract Repository for the Lockup and Vesting Token Plans on Somnia Network",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
