@@ -91,5 +91,5 @@ async function updateBaseURI(artifact, address, uriBase) {
   await contract.updateBaseURI(uri);
 }
 
-// updateBaseURI('TokenLockupPlans_Bound', '0x06B6D0AbD9dfC7F04F478B089FD89d4107723264', 'https://dynamic-nft.hedgey.finance/berachainArtio/');
+// updateBaseURI('TokenLockupPlans_Bound', '0x06B6D0AbD9dfC7F04F478B089FD89d4107723264', 'https://example.org/');
 
