@@ -78,8 +78,8 @@ const args = [
   ['Bound-TokenLockupPlans', 'B-TLP'],
   ['Bound-VotingTokenLockupPlans', 'B-VTLP'],
 ];
-const uri = 'https://dynamic-nft.hedgey.finance/';
-const network = 'scroll/'
+const uri = 'https://example.org/';
+const network = 'somnia-testnet/'
 
 deployAll(artifacts, args, uri, network);
 
