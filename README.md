@@ -25,16 +25,6 @@ The following contracts are the primary points of interaction for users:
 
 All smart contracts are located in the `./contracts` folder. The core contracts are in the `./contracts/LockupPlans` and `./contracts/VestingPlans` folders. Shared logic for storage, URI administration, and other functionalities is in `./contracts/sharedContracts`.
 
-## Testing
-
-To run the tests, first clone the repository and install the dependencies:
-
-```bash
-npm install
-npx hardhat compile
-npx hardhat test
-```
-
 ## Deployment
 
 To deploy the contracts to the Somnia Network, create a `.env` file with your private key and the Somnia RPC URL. Then, run the deployment script:
