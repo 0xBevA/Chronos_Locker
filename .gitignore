@@ -120,3 +120,4 @@ scripts/claims_testing
 
 flattened
 contracts/test/TokenDeployer.sol
+.DS_Store
