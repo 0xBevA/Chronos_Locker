@@ -1,35 +1,64 @@
-import { useContractWrite, usePrepareContractWrite } from 'wagmi';
+import { useContractWrite } from 'wagmi';
 import { utils } from 'ethers';
 import { TokenVestingPlansABI } from '@/abi/TokenVestingPlans';
 
 const contractAddress = '0xB60945f33FaC45e8D44b11f54d7c4CE90dc15996'; // From deployed-contracts.txt
 
 import { useFormStore } from '@/store/formStore';
+import { useAccount } from 'wagmi';
+
+// Helper function to convert time units to seconds
+const getSeconds = (amount: number, unit: 'days' | 'months' | 'years') => {
+  switch (unit) {
+    case 'days':
+      return amount * 86400;
+    case 'months':
+      return amount * 2592000; // 30 days
+    case 'years':
+      return amount * 31536000;
+    default:
+      return 0;
+  }
+};
 
 export function useCreatePlan() {
-  const { tokenAddress } = useFormStore();
-  // NOTE: Other form state values will be used here to calculate the args
+  const { address: connectedAddress } = useAccount();
+  const { tokenAddress, vestingTerm, vestingTermUnit, cliff, cliffUnit, vestingAdmin: admin, plans } = useFormStore();
 
-  const { config } = usePrepareContractWrite({
+  const { data, isLoading, isSuccess, writeAsync } = useContractWrite({
     address: contractAddress,
     abi: TokenVestingPlansABI,
     functionName: 'createPlan',
-    // TODO: Replace placeholders with actual calculated values from form state
-    args: [
-      '0x70997970C51812dc3A010C7d01b50e0d17dc79C8', // recipient (placeholder)
-      tokenAddress, // token
-      utils.parseEther('1000'), // amount (placeholder)
-      Math.floor(Date.now() / 1000), // start (current time)
-      Math.floor(Date.now() / 1000) + 31536000, // cliff (1 year from now)
-      1, // rate (placeholder)
-      1, // period (placeholder)
-      '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC', // vestingAdmin (placeholder)
-      false, // adminTransferOBO
-    ],
-    enabled: utils.isAddress(tokenAddress), // Only enable the hook if the token address is valid
   });
 
-  const { data, isLoading, isSuccess, write: createPlan } = useContractWrite(config);
+  const createPlan = async () => {
+    if (!writeAsync) return;
+
+    for (const plan of plans) {
+      const { recipient, amount, startDate } = plan;
+      if (!utils.isAddress(recipient) || !amount || !startDate) {
+        console.error('Invalid plan:', plan);
+        continue; // Skip invalid plans
+      }
+
+      const parsedAmount = utils.parseEther(amount);
+      const vestingAdmin = admin || connectedAddress || '0x0000000000000000000000000000000000000000';
+      const start = Math.floor(new Date(startDate).getTime() / 1000);
+      const cliffSeconds = getSeconds(cliff, cliffUnit);
+      const cliffDate = start + cliffSeconds;
+      const vestingSeconds = getSeconds(vestingTerm, vestingTermUnit);
+      const period = 1; // Linear vesting means rate is per second
+      const rate = vestingSeconds > 0 ? parsedAmount.div(vestingSeconds) : utils.parseEther('0');
+
+      try {
+        await writeAsync({
+          args: [recipient, tokenAddress, parsedAmount, start, cliffDate, rate, period, vestingAdmin, false],
+        });
+      } catch (error) {
+        console.error('Failed to create plan:', error);
+      }
+    }
+  };
 
   return { data, isLoading, isSuccess, createPlan };
 }

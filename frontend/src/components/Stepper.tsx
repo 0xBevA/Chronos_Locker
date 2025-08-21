@@ -2,7 +2,7 @@
 
 import { useFormStore } from '@/store/formStore';
 
-const steps = ['Setup', 'Administration', 'Details', 'Completed'];
+const steps = ['Setup', 'Administration', 'Details', 'Complete'];
 
 export function Stepper() {
   const { step: currentStep } = useFormStore();
