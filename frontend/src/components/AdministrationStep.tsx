@@ -36,12 +36,12 @@ export function AdministrationStep() {
   return (
     <div className="mt-8 space-y-6">
       <div>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <label htmlFor="vesting-admin" className="block text-sm font-medium text-gray-700">
             Vesting admin address
           </label>
           {!isEditing && (
-            <button onClick={() => setIsEditing(true)} className="text-sm text-blue-600 hover:underline">
+            <button onClick={() => setIsEditing(true)} className="text-sm text-blue-600 hover:underline text-left sm:text-right">
               Change Vesting admin address
             </button>
           )}
@@ -61,7 +61,7 @@ export function AdministrationStep() {
             {!isAdminAddressValid && <p className="mt-1 text-sm text-red-600">Invalid Ethereum address.</p>}
           </>
         ) : (
-          <div className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm text-gray-900">
+          <div className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm sm:text-sm text-gray-900 break-words">
             {vestingAdmin || 'Not set'}
           </div>
         )}

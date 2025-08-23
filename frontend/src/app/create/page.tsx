@@ -1,6 +1,6 @@
 'use client';
 
-import { Stepper } from '@/components/Stepper';
+import { Stepper, steps as stepNames } from '@/components/Stepper';
 import { SetupStep } from '@/components/SetupStep';
 import { AdministrationStep } from '@/components/AdministrationStep';
 import { DetailsStep } from '@/components/DetailsStep';
@@ -46,16 +46,19 @@ export default function CreatePlanPage() {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen p-8">
+    <div className="bg-gray-50 min-h-screen p-4 md:p-8">
       <div className="flex justify-end items-center mb-4 space-x-4">
         <Link href="/" className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-semibold hover:bg-gray-300">
           Dashboard
         </Link>
         <ConnectWallet />
       </div>
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-6xl mx-auto grid grid-cols-3 gap-8">
-        <div className="col-span-2">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Create a Vesting Plan</h1>
+      <div className="bg-white rounded-lg shadow-lg p-4 md:p-8 w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2 order-2 md:order-1">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Create a Vesting Plan</h1>
+          <div className="md:hidden text-center mb-4">
+            <p className="text-lg font-semibold text-blue-600">Step {step}: {stepNames[step - 1]}</p>
+          </div>
           <Stepper />
 
           {renderStep()}
@@ -98,7 +101,7 @@ export default function CreatePlanPage() {
             </div>
           )}
         </div>
-        <div className="col-span-1">
+        <div className="md:col-span-1 order-1 md:order-2">
           <PlanSummary />
         </div>
       </div>

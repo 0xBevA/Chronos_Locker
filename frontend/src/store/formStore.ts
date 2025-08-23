@@ -44,9 +44,29 @@ type FormState = {
   ) => void;
   setIsApproved: (isApproved: boolean) => void;
   setPlanBalanceValidity: (index: number, isValid: boolean) => void;
+  resetForm: () => void;
 };
 
-export const useFormStore = create<FormState>((set) => ({
+const initialState: Omit<
+  FormState,
+  | 'setStep'
+  | 'setTokenAddress'
+  | 'setIsValidAddress'
+  | 'setIsAdminAddressValid'
+  | 'setUnlockFrequency'
+  | 'setVestingTerm'
+  | 'setVestingTermUnit'
+  | 'setCliff'
+  | 'setCliffUnit'
+  | 'setPostVestingLockup'
+  | 'setVestingAdmin'
+  | 'addPlan'
+  | 'removePlan'
+  | 'updatePlan'
+  | 'setIsApproved'
+  | 'setPlanBalanceValidity'
+  | 'resetForm'
+> = {
   step: 1,
   tokenAddress: '',
   unlockFrequency: 'Linear',
@@ -60,6 +80,10 @@ export const useFormStore = create<FormState>((set) => ({
   isApproved: false,
   isValidAddress: true,
   isAdminAddressValid: true,
+};
+
+export const useFormStore = create<FormState>((set) => ({
+  ...initialState,
 
   setStep: (step) => set({ step }),
   setTokenAddress: (address) => set({ tokenAddress: address }),
@@ -104,4 +128,5 @@ export const useFormStore = create<FormState>((set) => ({
         i === index ? { ...plan, hasSufficientBalance: isValid } : plan
       ),
     })),
+  resetForm: () => set(initialState),
 }));

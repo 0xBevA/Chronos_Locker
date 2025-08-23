@@ -29,11 +29,11 @@ export function useApprove() {
     },
   });
 
-  const { data, isPending, isSuccess, writeContract } = useWriteContract();
+  const { data, isPending, isSuccess, writeContractAsync } = useWriteContract();
 
-  const approve = () => {
+  const approve = async () => {
     if (simulationData?.request) {
-      writeContract(simulationData.request);
+      return await writeContractAsync(simulationData.request);
     }
   };
 

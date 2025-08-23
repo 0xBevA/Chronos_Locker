@@ -53,8 +53,8 @@ export function DetailsStep() {
               Remove
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
               <label className="block text-sm font-bold text-gray-900">Recipient address</label>
               <input
                 type="text"
@@ -66,7 +66,7 @@ export function DetailsStep() {
               />
               {!plan.isRecipientValid && <p className="mt-1 text-sm text-red-600">Invalid Ethereum address.</p>}
             </div>
-            <div>
+            <div className="md:col-span-1">
               <label className="block text-sm font-bold text-gray-900">
                 Amount of tokens {selectedToken && `(${selectedToken.token.symbol})`}
               </label>
@@ -82,7 +82,7 @@ export function DetailsStep() {
                 <p className="mt-1 text-sm text-red-600">Insufficient balance.</p>
               )}
             </div>
-            <div>
+            <div className="md:col-span-1">
               <label className="block text-sm font-bold text-gray-900">Vesting start date</label>
               <input
                 type="date"

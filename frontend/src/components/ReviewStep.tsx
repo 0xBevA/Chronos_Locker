@@ -3,9 +3,10 @@
 import { useFormStore } from '@/store/formStore';
 import { useApprove } from '@/hooks/useApprove';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAllowance } from '@/hooks/useAllowance';
-import { parseEther } from 'viem';
+import { parseEther, formatEther } from 'viem';
+import { useWaitForTransactionReceipt } from 'wagmi';
 
 interface Token {
   address: string;
@@ -33,7 +34,12 @@ export function ReviewStep() {
     setIsApproved,
     postVestingLockup,
   } = useFormStore();
-  const { data: approveData, isLoading: isApproving, isSuccess: isApproveSuccess, approve } = useApprove();
+  const { data: approveData, isLoading: isApproving, approve } = useApprove();
+  const [approveTxHash, setApproveTxHash] = useState<`0x${string}` | undefined>();
+  const { data: approveReceipt, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
+    hash: approveTxHash,
+  });
+
   const { tokenBalances } = useTokenBalances();
   const { allowance, refetch: refetchAllowance } = useAllowance(tokenAddress as `0x${string}`);
 
@@ -48,10 +54,11 @@ export function ReviewStep() {
   useEffect(() => {
     if (typeof allowance === 'bigint' && allowance >= totalAmount) {
       setIsApproved(true);
+      setStep(5); // Automatically move to the next step
     } else {
       setIsApproved(false);
     }
-  }, [allowance, totalAmount, setIsApproved]);
+  }, [allowance, totalAmount, setIsApproved, setStep]);
 
   useEffect(() => {
     if (isApproveSuccess) {
@@ -70,7 +77,7 @@ export function ReviewStep() {
           <h3 className="text-lg font-medium text-gray-900">Token & Schedule</h3>
           <div className="mt-2 space-y-2 text-gray-800 bg-gray-50 p-4 rounded-md">
             <p><span className="font-semibold">Token:</span> {selectedToken?.token.name} ({selectedToken?.token.symbol})</p>
-            <p><span className="font-semibold">Total Amount:</span> {totalAmount} {selectedToken?.token.symbol}</p>
+            <p className="break-words"><span className="font-semibold">Total Amount:</span> {formatEther(totalAmount)} {selectedToken?.token.symbol}</p>
             <p><span className="font-semibold">Unlock Frequency:</span> {unlockFrequency}</p>
             <p><span className="font-semibold">Vesting Term:</span> {vestingTerm} {vestingTermUnit}</p>
             <p><span className="font-semibold">Cliff:</span> {cliff} {cliffUnit}</p>
@@ -80,7 +87,7 @@ export function ReviewStep() {
         <div>
           <h3 className="text-lg font-medium text-gray-900">Administration</h3>
           <div className="mt-2 space-y-2 text-gray-800 bg-gray-50 p-4 rounded-md">
-            <p><span className="font-semibold">Vesting Admin:</span> {vestingAdmin}</p>
+            <p className="break-words"><span className="font-semibold">Vesting Admin:</span> {vestingAdmin}</p>
             <p><span className="font-semibold">Recipient Change by Admin:</span> {postVestingLockup ? 'Enabled' : 'Disabled'}</p>
           </div>
         </div>
@@ -90,7 +97,7 @@ export function ReviewStep() {
           <div className="mt-2 space-y-2 text-gray-800 bg-gray-50 p-4 rounded-md">
             {plans.map((plan, index) => (
               <div key={index} className="p-2 border-b">
-                <p><span className="font-semibold">Recipient #{index + 1}:</span> {plan.recipient}</p>
+                <p className="break-words"><span className="font-semibold">Recipient #{index + 1}:</span> {plan.recipient}</p>
                 <p><span className="font-semibold">Amount:</span> {plan.amount} {selectedToken?.token.symbol}</p>
                 <p><span className="font-semibold">Start Date:</span> {plan.startDate}</p>
               </div>
@@ -101,7 +108,10 @@ export function ReviewStep() {
 
       {!isApproved ? (
         <button
-          onClick={() => approve?.()}
+          onClick={async () => {
+            const hash = await approve?.();
+            setApproveTxHash(hash);
+          }}
           className="w-full px-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:bg-gray-300"
           disabled={!approve || isApproving}
         >

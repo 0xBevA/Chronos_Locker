@@ -3,6 +3,7 @@
 import { useFormStore } from '@/store/formStore';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
 import { isAddress, formatEther } from 'viem';
+import { useState, useEffect } from 'react';
 
 interface Token {
   address: string;
@@ -35,6 +36,18 @@ export function SetupStep() {
     setIsValidAddress,
   } = useFormStore();
   const { tokenBalances, isLoading } = useTokenBalances();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's md breakpoint
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const handleAddressChange = (address: string) => {
     setTokenAddress(address);
@@ -68,7 +81,11 @@ export function SetupStep() {
           <option value="">{isLoading ? 'Loading tokens...' : 'Select a token'}</option>
           {tokenBalances?.map((balance: TokenBalance) => (
             <option key={balance.token.address} value={balance.token.address}>
-              {balance.token.name} ({balance.token.symbol}) - Balance: {parseFloat(formatEther(BigInt(balance.value))).toFixed(4)}
+              {isMobile
+                ? `${balance.token.symbol} - ${parseFloat(formatEther(BigInt(balance.value))).toFixed(4)}`
+                : `${balance.token.name} (${balance.token.symbol}) - Balance: ${parseFloat(
+                    formatEther(BigInt(balance.value))
+                  ).toFixed(4)}`}
             </option>
           ))}
         </select>
@@ -108,7 +125,7 @@ export function SetupStep() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="vesting-term" className="block text-sm font-medium text-gray-700">
             Vesting term
@@ -117,7 +134,10 @@ export function SetupStep() {
             <input
               type="number"
               value={vestingTerm}
-              onChange={(e) => setVestingTerm(parseInt(e.target.value))}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                setVestingTerm(isNaN(value) ? 0 : value);
+              }}
               className="w-20 px-3 py-2 border border-gray-300 rounded-l-md text-gray-900"
             />
             <select
@@ -139,7 +159,10 @@ export function SetupStep() {
             <input
               type="number"
               value={cliff}
-              onChange={(e) => setCliff(parseInt(e.target.value))}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                setCliff(isNaN(value) ? 0 : value);
+              }}
               className="w-20 px-3 py-2 border border-gray-300 rounded-l-md text-gray-900"
             />
             <select
