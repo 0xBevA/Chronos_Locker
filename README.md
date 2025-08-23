@@ -31,3 +31,4 @@ To deploy the contracts to the Somnia Network, create a `.env` file with your pr
 
 ```bash
 npx hardhat run scripts/deploy.js --network somnia-testnet
+
