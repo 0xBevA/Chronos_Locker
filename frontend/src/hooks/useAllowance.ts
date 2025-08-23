@@ -11,7 +11,7 @@ export function useAllowance(tokenAddress: `0x${string}`) {
     address: tokenAddress,
     abi: ERC20ABI,
     functionName: 'allowance',
-    args: [ownerAddress, vestingContractAddress],
+    args: [ownerAddress!, vestingContractAddress],
     query: {
       enabled: isAddress(tokenAddress) && !!ownerAddress,
     },

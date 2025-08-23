@@ -1,6 +1,27 @@
 export const ERC20ABI = [
   {
-    constant: true,
+    stateMutability: 'view',
+    type: 'function',
+    inputs: [{ name: 'account', type: 'address' }],
+    name: 'balanceOf',
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    stateMutability: 'view',
+    type: 'function',
+    inputs: [],
+    name: 'name',
+    outputs: [{ name: '', type: 'string' }],
+  },
+  {
+    stateMutability: 'view',
+    type: 'function',
+    inputs: [],
+    name: 'symbol',
+    outputs: [{ name: '', type: 'string' }],
+  },
+  {
+    stateMutability: 'view',
     inputs: [
       { name: '_owner', type: 'address' },
       { name: '_spender', type: 'address' },
@@ -10,7 +31,7 @@ export const ERC20ABI = [
     type: 'function',
   },
   {
-    constant: false,
+    stateMutability: 'nonpayable',
     inputs: [
       { name: '_spender', type: 'address' },
       { name: '_value', type: 'uint256' },
@@ -19,4 +40,4 @@ export const ERC20ABI = [
     outputs: [{ name: 'success', type: 'bool' }],
     type: 'function',
   },
-];
+] as const;

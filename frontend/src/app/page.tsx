@@ -1,102 +1,81 @@
 'use client';
 
-import { Stepper } from '@/components/Stepper';
-import { SetupStep } from '@/components/SetupStep';
-import { AdministrationStep } from '@/components/AdministrationStep';
-import { DetailsStep } from '@/components/DetailsStep';
-import { CompleteStep } from '@/components/CompleteStep';
-import { PlanSummary } from '@/components/PlanSummary';
-import { useCreatePlan } from '@/hooks/useCreatePlan';
 import { ConnectWallet } from '@/components/ConnectWallet';
-import { useFormStore } from '@/store/formStore';
-import { ReviewStep } from '@/components/ReviewStep';
+import Link from 'next/link';
+import { useVestingPlans } from '@/hooks/useVestingPlans';
+import { useAccount } from 'wagmi';
 
-export default function Home() {
-  const { data: createPlanData, isLoading: isCreating, isSuccess: isCreateSuccess, createPlan } = useCreatePlan();
-  const {
-    step,
-    setStep,
-    tokenAddress,
-    vestingTerm,
-    cliff,
-    isValidAddress,
-    isAdminAddressValid,
-    plans,
-    isApproved,
-  } = useFormStore();
-
-  const isStep1Valid = tokenAddress !== '' && vestingTerm > 0 && cliff > 0 && isValidAddress;
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return <SetupStep />;
-      case 2:
-        return <AdministrationStep />;
-      case 3:
-        return <DetailsStep />;
-      case 4:
-        return <ReviewStep />;
-      case 5:
-        return <CompleteStep />;
-      default:
-        return <SetupStep />;
-    }
-  };
+export default function DashboardPage() {
+  const { plans, isLoading } = useVestingPlans();
+  const { isConnected } = useAccount();
 
   return (
     <div className="bg-gray-50 min-h-screen p-8">
-      <div className="flex justify-end mb-4">
-        <ConnectWallet />
-      </div>
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-6xl mx-auto grid grid-cols-3 gap-8">
-        <div className="col-span-2">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Create a Vesting Plan</h1>
-          <Stepper />
-
-          {renderStep()}
-
-          <div className="mt-8 flex justify-between">
-            {step > 1 && (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-md font-semibold hover:bg-gray-300"
-              >
-                Back
-              </button>
-            )}
-            {step < 5 ? (
-              <button
-                onClick={() => setStep(step + 1)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 disabled:bg-gray-300"
-                disabled={
-                  (step === 1 && !isStep1Valid) ||
-                  (step === 2 && !isAdminAddressValid) ||
-                  (step === 3 &&
-                    plans.some(
-                      (plan) =>
-                        !plan.isRecipientValid ||
-                        !plan.recipient ||
-                        !plan.hasSufficientBalance ||
-                        !plan.amount ||
-                        !plan.startDate
-                    )) ||
-                  (step === 4 && !isApproved)
-                }
-              >
-                {step === 3 ? 'Review' : 'Next'}
-              </button>
-            ) : null}
+      <div className="w-full max-w-6xl mx-auto">
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Vesting Dashboard</h1>
+            <p className="text-gray-500">Manage and view all your vesting plans.</p>
           </div>
-          {isCreateSuccess && (
-            <div className="mt-4 text-green-600">
-              Plan created successfully! Transaction: {JSON.stringify(createPlanData)}
-            </div>
-          )}
+          <div className="flex items-center gap-4">
+            <Link href="/create">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700">
+                Create Vesting Plan
+              </button>
+            </Link>
+            <ConnectWallet />
+          </div>
+        </header>
+
+        <main>
+          <div className="bg-white rounded-lg shadow">
+            <div className="grid grid-cols-5 gap-4 p-4 font-semibold text-gray-600 border-b">
+              <div className="col-span-2">Token</div>
+            <div>Granted tokens</div>
+            <div>Vested</div>
+            <div className="text-right"></div>
+          </div>
+          {isLoading && <div className="p-4 text-center text-gray-500">Loading plans...</div>}
+          {!isLoading && !isConnected && <div className="p-4 text-center text-gray-500">Please connect your wallet to see your vesting plans.</div>}
+          {!isLoading && isConnected && plans.length === 0 && <div className="p-4 text-center text-gray-500">No active vesting plans found.</div>}
+          {!isLoading &&
+            isConnected &&
+            plans.map((plan, index) => (
+              <div key={index} className="grid grid-cols-5 gap-4 p-4 items-center border-b last:border-b-0">
+                <div className="col-span-2 flex items-center">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500 mr-4">
+                    {plan.token.symbol.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{plan.token.name}</p>
+                    <a
+                      href={`https://somnia.w3us.site/token/${plan.token.address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {plan.token.symbol} ↗
+                    </a>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-gray-900">{parseFloat(plan.granted).toFixed(4)} {plan.token.symbol}</p>
+                  <p className="text-sm text-gray-500">~$0.00</p>
+                </div>
+                <div>
+                  <p className="text-gray-900">{parseFloat(plan.vested).toFixed(4)} {plan.token.symbol}</p>
+                  <p className="text-sm text-gray-500">~$0.00</p>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-900">{plan.activePlans}</p>
+                  <button className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    View details
+                  </button>
+                </div>
+              </div>
+            ))}
         </div>
-        <div className="col-span-1">
-          <PlanSummary />
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ export function useCreatePlan() {
           address: contractAddress,
           abi: TokenVestingPlansABI,
           functionName: 'createPlan',
-          args: [recipient, tokenAddress, parsedAmount, start, cliffDate, rate, period, vestingAdmin, postVestingLockup],
+          args: [recipient as `0x${string}`, tokenAddress as `0x${string}`, parsedAmount, start, cliffDate, rate, period, vestingAdmin as `0x${string}`, postVestingLockup],
         });
       } catch (error) {
         console.error('Failed to create plan:', error);
