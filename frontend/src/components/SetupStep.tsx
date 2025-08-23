@@ -2,6 +2,7 @@
 
 import { useFormStore } from '@/store/formStore';
 import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { isAddress, formatEther } from 'viem';
 
 interface Token {
   address: string;
@@ -30,8 +31,19 @@ export function SetupStep() {
     setCliffUnit,
     postVestingLockup,
     setPostVestingLockup,
+    isValidAddress,
+    setIsValidAddress,
   } = useFormStore();
   const { tokenBalances, isLoading } = useTokenBalances();
+
+  const handleAddressChange = (address: string) => {
+    setTokenAddress(address);
+    if (address && !isAddress(address)) {
+      setIsValidAddress(false);
+    } else {
+      setIsValidAddress(true);
+    }
+  };
 
   const freqButtonClasses = (freq: 'Linear' | 'Periodic' | 'Single') =>
     `px-4 py-2 border text-sm font-medium ${
@@ -48,22 +60,28 @@ export function SetupStep() {
           id="token-address"
           className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
           value={tokenAddress}
-          onChange={(e) => setTokenAddress(e.target.value)}
+          onChange={(e) => {
+            setTokenAddress(e.target.value);
+            setIsValidAddress(true);
+          }}
         >
           <option value="">{isLoading ? 'Loading tokens...' : 'Select a token'}</option>
           {tokenBalances?.map((balance: TokenBalance) => (
             <option key={balance.token.address} value={balance.token.address}>
-              {balance.token.name} ({balance.token.symbol})
+              {balance.token.name} ({balance.token.symbol}) - Balance: {parseFloat(formatEther(BigInt(balance.value))).toFixed(4)}
             </option>
           ))}
         </select>
         <input
           type="text"
-          className="mt-2 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900"
+          className={`mt-2 block w-full px-3 py-2 bg-white border ${
+            isValidAddress ? 'border-gray-300' : 'border-red-500'
+          } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-gray-900`}
           placeholder="Or paste token contract address"
           value={tokenAddress}
-          onChange={(e) => setTokenAddress(e.target.value)}
+          onChange={(e) => handleAddressChange(e.target.value)}
         />
+        {!isValidAddress && <p className="mt-1 text-sm text-red-600">Invalid Ethereum address.</p>}
       </div>
 
       <div>
@@ -137,28 +155,6 @@ export function SetupStep() {
         </div>
       </div>
 
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={() => setPostVestingLockup(!postVestingLockup)}
-          className={`${
-            postVestingLockup ? 'bg-blue-600' : 'bg-gray-200'
-          } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
-          role="switch"
-          aria-checked={postVestingLockup}
-        >
-          <span
-            aria-hidden="true"
-            className={`${
-              postVestingLockup ? 'translate-x-5' : 'translate-x-0'
-            } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
-          ></span>
-        </button>
-        <span className="ml-3">
-          <p className="text-sm font-medium text-gray-900">Enable post-vesting lockup</p>
-          <p className="text-sm text-gray-500">Adds additional scheduling for fine-grained control.</p>
-        </span>
-      </div>
     </div>
   );
 }

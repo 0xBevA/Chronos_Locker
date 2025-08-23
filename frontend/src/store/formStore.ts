@@ -1,9 +1,12 @@
 import { create } from 'zustand';
+import { isAddress } from 'viem';
 
 type Plan = {
   recipient: string;
   amount: string;
   startDate: string;
+  isRecipientValid: boolean;
+  hasSufficientBalance: boolean;
 };
 
 type FormState = {
@@ -18,9 +21,13 @@ type FormState = {
   vestingAdmin: string;
   plans: Plan[];
   isApproved: boolean;
+  isValidAddress: boolean;
+  isAdminAddressValid: boolean;
 
   setStep: (step: number) => void;
   setTokenAddress: (address: string) => void;
+  setIsValidAddress: (isValid: boolean) => void;
+  setIsAdminAddressValid: (isValid: boolean) => void;
   setUnlockFrequency: (freq: 'Linear' | 'Periodic' | 'Single') => void;
   setVestingTerm: (term: number) => void;
   setVestingTermUnit: (unit: 'years' | 'months' | 'days') => void;
@@ -30,8 +37,13 @@ type FormState = {
   setVestingAdmin: (admin: string) => void;
   addPlan: () => void;
   removePlan: (index: number) => void;
-  updatePlan: (index: number, field: keyof Plan, value: string) => void;
+  updatePlan: (
+    index: number,
+    field: keyof Omit<Plan, 'isRecipientValid' | 'hasSufficientBalance'>,
+    value: string
+  ) => void;
   setIsApproved: (isApproved: boolean) => void;
+  setPlanBalanceValidity: (index: number, isValid: boolean) => void;
 };
 
 export const useFormStore = create<FormState>((set) => ({
@@ -44,11 +56,15 @@ export const useFormStore = create<FormState>((set) => ({
   cliffUnit: 'years',
   postVestingLockup: false,
   vestingAdmin: '',
-  plans: [{ recipient: '', amount: '', startDate: '' }],
+  plans: [{ recipient: '', amount: '', startDate: '', isRecipientValid: true, hasSufficientBalance: true }],
   isApproved: false,
+  isValidAddress: true,
+  isAdminAddressValid: true,
 
   setStep: (step) => set({ step }),
   setTokenAddress: (address) => set({ tokenAddress: address }),
+  setIsValidAddress: (isValid) => set({ isValidAddress: isValid }),
+  setIsAdminAddressValid: (isValid) => set({ isAdminAddressValid: isValid }),
   setUnlockFrequency: (freq) => set({ unlockFrequency: freq }),
   setVestingTerm: (term) => set({ vestingTerm: term }),
   setVestingTermUnit: (unit) => set({ vestingTermUnit: unit }),
@@ -58,15 +74,34 @@ export const useFormStore = create<FormState>((set) => ({
   setVestingAdmin: (admin) => set({ vestingAdmin: admin }),
   addPlan: () =>
     set((state) => ({
-      plans: [...state.plans, { recipient: '', amount: '', startDate: '' }],
+      plans: [
+        ...state.plans,
+        { recipient: '', amount: '', startDate: '', isRecipientValid: true, hasSufficientBalance: true },
+      ],
     })),
   removePlan: (index) =>
     set((state) => ({
       plans: state.plans.filter((_, i) => i !== index),
     })),
   updatePlan: (index, field, value) =>
-    set((state) => ({
-      plans: state.plans.map((plan, i) => (i === index ? { ...plan, [field]: value } : plan)),
-    })),
+    set((state) => {
+      const newPlans = state.plans.map((plan, i) => {
+        if (i === index) {
+          const updatedPlan = { ...plan, [field]: value };
+          if (field === 'recipient') {
+            updatedPlan.isRecipientValid = isAddress(value);
+          }
+          return updatedPlan;
+        }
+        return plan;
+      });
+      return { plans: newPlans };
+    }),
   setIsApproved: (isApproved) => set({ isApproved }),
+  setPlanBalanceValidity: (index: number, isValid: boolean) =>
+    set((state) => ({
+      plans: state.plans.map((plan, i) =>
+        i === index ? { ...plan, hasSufficientBalance: isValid } : plan
+      ),
+    })),
 }));

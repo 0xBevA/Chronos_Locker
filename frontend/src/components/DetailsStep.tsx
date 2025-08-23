@@ -1,9 +1,47 @@
 'use client';
 
 import { useFormStore } from '@/store/formStore';
+import { useTokenBalances } from '@/hooks/useTokenBalances';
+import { parseEther } from 'viem';
+
+interface Token {
+  address: string;
+  name: string;
+  symbol: string;
+}
+
+interface TokenBalance {
+  token: Token;
+  value: string;
+}
 
 export function DetailsStep() {
-  const { plans, addPlan, removePlan, updatePlan } = useFormStore();
+  const { plans, addPlan, removePlan, updatePlan, tokenAddress, setPlanBalanceValidity } = useFormStore();
+  const { tokenBalances } = useTokenBalances();
+
+  const selectedToken = tokenBalances?.find((balance: TokenBalance) => balance.token.address === tokenAddress);
+
+  const getTomorrow = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  };
+
+  const handleAmountChange = (index: number, amount: string) => {
+    updatePlan(index, 'amount', amount);
+
+    if (selectedToken && amount) {
+      try {
+        const amountInWei = parseEther(amount);
+        const balanceInWei = BigInt(selectedToken.value);
+        setPlanBalanceValidity(index, amountInWei <= balanceInWei);
+      } catch {
+        setPlanBalanceValidity(index, false);
+      }
+    } else {
+      setPlanBalanceValidity(index, true);
+    }
+  };
 
   return (
     <div className="mt-8 space-y-6">
@@ -20,19 +58,29 @@ export function DetailsStep() {
               <label className="block text-sm font-bold text-gray-900">Recipient address</label>
               <input
                 type="text"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-gray-900"
+                className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                  plan.isRecipientValid ? 'border-gray-300' : 'border-red-500'
+                } rounded-md shadow-sm text-gray-900`}
                 value={plan.recipient}
                 onChange={(e) => updatePlan(index, 'recipient', e.target.value)}
               />
+              {!plan.isRecipientValid && <p className="mt-1 text-sm text-red-600">Invalid Ethereum address.</p>}
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-900">Amount of tokens</label>
+              <label className="block text-sm font-bold text-gray-900">
+                Amount of tokens {selectedToken && `(${selectedToken.token.symbol})`}
+              </label>
               <input
                 type="text"
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-gray-900"
+                className={`mt-1 block w-full px-3 py-2 bg-white border ${
+                  plan.hasSufficientBalance ? 'border-gray-300' : 'border-red-500'
+                } rounded-md shadow-sm text-gray-900`}
                 value={plan.amount}
-                onChange={(e) => updatePlan(index, 'amount', e.target.value)}
+                onChange={(e) => handleAmountChange(index, e.target.value)}
               />
+              {!plan.hasSufficientBalance && (
+                <p className="mt-1 text-sm text-red-600">Insufficient balance.</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-900">Vesting start date</label>
@@ -40,6 +88,7 @@ export function DetailsStep() {
                 type="date"
                 className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-gray-900"
                 value={plan.startDate}
+                min={getTomorrow()}
                 onChange={(e) => updatePlan(index, 'startDate', e.target.value)}
               />
             </div>

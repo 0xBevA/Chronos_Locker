@@ -1,11 +1,9 @@
-import { useContractWrite } from 'wagmi';
-import { utils } from 'ethers';
+import { useWriteContract, useAccount } from 'wagmi';
+import { isAddress, parseEther } from 'viem';
 import { TokenVestingPlansABI } from '@/abi/TokenVestingPlans';
+import { useFormStore } from '@/store/formStore';
 
 const contractAddress = '0xB60945f33FaC45e8D44b11f54d7c4CE90dc15996'; // From deployed-contracts.txt
-
-import { useFormStore } from '@/store/formStore';
-import { useAccount } from 'wagmi';
 
 // Helper function to convert time units to seconds
 const getSeconds = (amount: number, unit: 'days' | 'months' | 'years') => {
@@ -23,36 +21,43 @@ const getSeconds = (amount: number, unit: 'days' | 'months' | 'years') => {
 
 export function useCreatePlan() {
   const { address: connectedAddress } = useAccount();
-  const { tokenAddress, vestingTerm, vestingTermUnit, cliff, cliffUnit, vestingAdmin: admin, plans } = useFormStore();
-
-  const { data, isLoading, isSuccess, writeAsync } = useContractWrite({
-    address: contractAddress,
-    abi: TokenVestingPlansABI,
-    functionName: 'createPlan',
-  });
+  const {
+    tokenAddress,
+    vestingTerm,
+    vestingTermUnit,
+    cliff,
+    cliffUnit,
+    vestingAdmin: admin,
+    plans,
+    postVestingLockup,
+  } = useFormStore();
+  const { data, isPending, isSuccess, writeContractAsync } = useWriteContract();
 
   const createPlan = async () => {
-    if (!writeAsync) return;
+    if (!writeContractAsync) return;
 
     for (const plan of plans) {
       const { recipient, amount, startDate } = plan;
-      if (!utils.isAddress(recipient) || !amount || !startDate) {
+      if (!isAddress(recipient) || !amount || !startDate) {
         console.error('Invalid plan:', plan);
         continue; // Skip invalid plans
       }
 
-      const parsedAmount = utils.parseEther(amount);
+      const parsedAmount = parseEther(amount);
       const vestingAdmin = admin || connectedAddress || '0x0000000000000000000000000000000000000000';
-      const start = Math.floor(new Date(startDate).getTime() / 1000);
-      const cliffSeconds = getSeconds(cliff, cliffUnit);
+      const start = BigInt(Math.floor(new Date(startDate).getTime() / 1000));
+      const cliffSeconds = BigInt(getSeconds(cliff, cliffUnit));
       const cliffDate = start + cliffSeconds;
-      const vestingSeconds = getSeconds(vestingTerm, vestingTermUnit);
-      const period = 1; // Linear vesting means rate is per second
-      const rate = vestingSeconds > 0 ? parsedAmount.div(vestingSeconds) : utils.parseEther('0');
+      const vestingSeconds = BigInt(getSeconds(vestingTerm, vestingTermUnit));
+      const period = 1n; // Linear vesting means rate is per second
+      const rate = vestingSeconds > 0n ? parsedAmount / vestingSeconds : 0n;
 
       try {
-        await writeAsync({
-          args: [recipient, tokenAddress, parsedAmount, start, cliffDate, rate, period, vestingAdmin, false],
+        await writeContractAsync({
+          address: contractAddress,
+          abi: TokenVestingPlansABI,
+          functionName: 'createPlan',
+          args: [recipient, tokenAddress, parsedAmount, start, cliffDate, rate, period, vestingAdmin, postVestingLockup],
         });
       } catch (error) {
         console.error('Failed to create plan:', error);
@@ -60,5 +65,5 @@ export function useCreatePlan() {
     }
   };
 
-  return { data, isLoading, isSuccess, createPlan };
+  return { data, isLoading: isPending, isSuccess, createPlan };
 }
